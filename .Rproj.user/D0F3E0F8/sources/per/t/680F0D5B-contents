@@ -1,0 +1,564 @@
+---
+title: "Stat2008_U7079953_Assign2"
+output: html_document
+---
+
+SMALL P VALUE = REJECT NULL
+
+Questions 1 (40 marks)
+A group of researchers in the US attempted to look at the pollution related factors affecting
+mortality. Thirty US cities were sampled. Total age-adjusted mortality, (mortality), from
+all causes, in deaths per 100,000 population, was measured, along with the following covariates: 
+
+mean annual precipitation (in inches) (precipitation); median number of school years completed 
+for persons aged 25 years or older (education); percentage of population that is non-white (nonwhite); relative pollution potential of oxides of nitrogen (nox); and relative pollution potential of sulphur dioxide (so2). “Relative pollution potential” is the product of tons emitted per day per square kilometre and a factor correcting for the city dimension and exposure. The data is available in a .csv file, pollution.
+
+(a) [6 marks] Fit a multiple linear regression (MLR) model with Mortality as the response
+variable and all other covariates as predictors. Is the regression model significant?
+```{r}
+pollution <- read.csv("pollution.csv", stringsAsFactors = T)
+mort <- pollution$mortality
+precip <- pollution$precipitation
+edu <- pollution$education
+nonwhite <- pollution$nonwhite
+nitro <- pollution$nox
+sul <- pollution$so2
+
+
+pol_mod <- lm(mortality ~ precipitation + education + nonwhite + nox + so2, data=pollution)
+
+summary(pol_mod)
+  # F-statistic: 4.646 on 5 and 24 DF,  p-value: 0.004166
+    # p less than alpha -> reject null -> have significance
+```
+
+To find whether the model is significant, it is looking at the relationship between the response variable (Total age-adjusted mortality, hereafter 'Mortality') and all covariates, namely Mean annual precipitation, Median school years completed for individuals older than 25, Percentage of non-white population, Pollution potential of oxides of nitrogen, and for sulfur dioxide (hereafter 'Precipitation', 'Education', 'Non-white', 'Nitro', and 'Sulfur' respectively).  
+
+A significant regression model evaluates the overall effect of all the predictor variables onto the response variable. This can be seen by looking at the F statistics found within the summary function:
+
+> pol_mod <- lm(mort ~ precip + edu + nonwhite + nitro + sul)
+> summary(pol_mod)
+Call:
+lm(formula = mort ~ precip + edu + nonwhite + nitro + sul)
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-35.789 -21.651   0.172  14.905  62.632 
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 1017.8272   119.1789   8.540 9.74e-09 ***
+precip         1.9614     1.2768   1.536    0.138    
+edu          -13.0493     8.6876  -1.502    0.146    
+nonwhite       0.6176     0.8531   0.724    0.476    
+nitro          2.0061     1.2073   1.662    0.110    
+sul           -0.2378     0.2521  -0.943    0.355    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Residual standard error: 29.46 on 24 degrees of freedom
+Multiple R-squared:  0.4918,	Adjusted R-squared:  0.386 
+F-statistic: 4.646 on 5 and 24 DF,  p-value: 0.004166
+
+The F statistics concerns the overall Mean squares that cannot be explained by the model in comparison with the variation that can be explained by the covariates. This gives an overall estimate of the significance of the model taking all the covariates into account. In this case, our hypothesis are:
+H0: Bk = 0
+HA: BK != 0 
+Our F statistic is 4.646 for 5 and 24 degrees of freedom, making the corresponding p-value to become 0.004166. With the significance level of 0.05, we deem the chance for the null happening by chance is slim. As such, we reject the null and conclude that the covariates has a relationship with the response, and thus is a significant model
+
+
+--------------------------------------------------------------------------------
+(b) [8 marks] What are the estimated coefficients of the (MLR) model in part (a) and the confidence intervals for each of these coefficients at a joint confidence level of 95%? Interpret the values of these estimated coefficients with regards to model specification.
+```{r}
+pol_mod$coefficients
+
+confint(pol_mod)
+
+confint(pol_mod, level=0.99)
+
+  # Thus, Bonferroni 95% joint CIs for B0 to B5 is: (list intervals)
+
+# For increased number of X variables, the Bonferroni becomes more and more conservative -> Produces overly wide intervals 
+  # Method is only useful for when g is quite small 
+? # Compare with model specifications https://www.stat.colostate.edu/~riczw/teach/STAT540_F15/Lecture/lec05.pdf
+```
+The estimated coefficients for our model can be found with the '$coefficients' function. These are (in 4 decimal places): 
+> pol_mod$coefficients
+ (Intercept)       precip          edu     nonwhite        nitro          sul 
+1017.8272         1.9614       -13.0493      0.6176       2.0061      -0.2378 
+
+To find a joint interval of 95% for each of these covariates, we are looking for a specified range where 95% of these covariate values falls within the same range of one another. For this, we could use the Bonferroni correction to find the adjusted confidence interval.
+     1-m(alpha) = 0.95 {m = 5 (Number of predictors)} -> alpha = 0.05/5 = 0.01
+     when alpha = 0.01, 1-a = 0.99 
+Through Bonferroni's correction, it suggests that each predictor's confidence level needs to be at 0.99 so that the intervals cover the betas jointly with the confidence level of 0.95. This could be seen in the following code (4dp):
+
+> confint(pol_mod, level=0.99)
+                  0.5 %       99.5 %
+(Intercept)    684.4910    1351.1634
+precip          -1.6100       5.5324
+edu            -37.3480      11.2495
+nonwhite        -1.7690       3.0038
+nitro           -1.3707       5.3828
+sul             -0.9428       0.4672
+
+On average, a 99% Confidence interval encompasses more values than a 95% confidence interval. While these intervals does include the estimated intercept values, there are significant amount of values around it. 
+
+Also, it should be noted that as the number of predictor variables increase, the Bonferroni intervals tends to be more conservative, thus increasing the interval since and may not give much credibility or reliability. As such, this joint interval may not be very helpful since we have 5 variables trying to connect with the response. 
+
+FINSIHH
+
+
+--------------------------------------------------------------------------------
+(c) [8 marks] There is a t-test associated with each of these coefficients. Briefly explain,
+what these tests can or cannot be used for? In your answer, be sure to mention the
+appropriate hypotheses that can be assessed using these t-tests.
+```{r}
+# What the test can and cannot do
+  #Can -> Look at the potential value of beta_k by inferring if it can be 0 or C
+    #-> Can provide 95% confidence level for the difference between b and beta (quantify distance from sample and true) -> Large difference = reject
+
+  # Cannot -> Infer about overall significance of predictors by looking at inidividual significance (p value from t test)
+# Hypothesis
+  # NUll -> if beta_k is 0 or C
+  # Alt -> if beta_k not 0 or C
+
+# Link beta t test + hypothesis
+summary(pol_mod)
+```
+
+It is possible to evaluate the individual t test associated with each of the coefficients. It looks at the t value for each coefficient and find the corresponding p-value based on a significance level (usually 0.05). As such, it quantifies the difference between the estimated sample value and the true value,while considering the variance of the sample statistic. These tests are limited as they cannot infer the significance of the model by looking at each individual p-value  
+FIN
+
+--------------------------------------------------------------------------------
+(d) [6 marks] Construct an appropriate test of the hypothesis that education and nox are
+not significant contributors to the model. That is, test βeducation = βnox = 0.
+```{r}
+#Test whether several Bk = 0
+pol_mod2 <- lm(mortality ~ precipitation + nonwhite + so2, data=pollution)
+pol_mod2$coefficients
+summary(pol_mod2)
+# Both their pvalues from t test is ,ore than 0.05 -> Fail to reject null -> βeducation = βnox = 0 -> Not significant contributors
+
+# > 1-pf(3.258, 2, 27)
+# [1] 0.054014 -> Greater than alpha = fail to reject null -> neither of these variables useful in predicting mortality (Model not significant)
+
+
+#beta2 is not zero when X1 is contained in the model etc
+
+anova(pol_mod2, pol_mod)
+    # p value is greater than alpha -> Both X2 and X4 is not significant / important in the model
+# Null ; βeducation = βnox = 0
+# Alt: Not all of betak in H0 is 0
+
+anova(pol_mod2)
+
+```
+
+We can check whether some of these predictor variables are significant to the model by evaluating the difference in F statistic p-value of the reduced and full model. Because we are evaluating whether βeducation and βnox are significant or not, our hypothesis is:
+H0 : βeducation = βnox = 0 (i.e., they are not significant)
+HA : At least one of the Bk in H0 is not equal to 0
+
+Because we are only testing whether several of the Betas are equal to 0, we are looking at partial F test, meaning we are only considering the effects of some predictors onto the model rather than all of them. This contributes to the corresponding models:
+Full model : Yi = Beta0 + Beta1(precip_i) + Beta2(Edu_i) + Beta3(Nonwhite_i) + Beta4(Nitro_i) + Beta5(Sul_i) + epsilon_i
+Reduced model : Yi = Beta0 + Beta1(precip_i) + Beta3(Nonwhite_i)  + Beta5(Sul_i) + epsilon_i.
+
+To assess their significance, we can use the anova function to compare both the reduced and full model:
+
+> pol_mod2 <- lm(mort ~ precip + nonwhite + sul)
+> anova(pol_mod2, pol_mod)
+Analysis of Variance Table
+Model 1: mort ~ precip + nonwhite + sul
+Model 2: mort ~ precip + edu + nonwhite + nitro + sul
+  Res.Df   RSS Df Sum of Sq      F Pr(>F)
+1     26 24408                           
+2     24 20826  2    3581.7 2.0637 0.1489
+
+As above, the F statistic is 2.0637 with the corresponding p-value as 0.1489. With a large p-value, we infer that the probability for the null occurring by chance is larger than the significance level of 0.05. As such, we fail to reject the null hypothesis and deduce that both βeducation and βnox are insignificant.
+
+--------------------------------------------------------------------------------
+(e) [6 marks] A researcher from this group suggested that they have been using a model
+with coefficients: βprecipitation = 2, βeducation = −10, βnonwhite = 3, βnox = 0, and
+βso2 = 1. Can you test whether this existing model is consistent with the new model
+you have fit? Write down appropriate full and reduced models for carrying out such a
+test. Perform the test and comment on the results.
+```{r}
+
+# Full model: Yi hat = 1017.8272 + 1.9614(precip_i) -13.0493(Edu_i) + 0.6176(Nonwhite_i) + 2.0061(Nitro_i) -0.2378(Sul_i) + epsilon_i
+#Red  Yi - 2(precip_i) + 10(Edu_i) - 3(Nonwhite_i) - sul_i = Beta0 + epsilon_i
+pollution
+pollution["y_new"] = ""
+
+pollution$y_new = pollution$mortality - 2*pollution$precipitation + 10*pollution$education - 3*pollution$nonwhite -1*pollution$so2
+
+pol_mod3 <- lm(y_new ~. -precipitation -education -nonwhite -nox -so2 -city -mortality, data=pollution)
+summary(pol_mod3)
+anova(pol_mod3)
+anova(pol_mod)
+
+qf(27.76336, 5, 24)
+1-pf(27.76336, 5, 24) # == 3.064668e-09 = smaller than alpha = reject null
+
+
+# Analysis of Variance Table
+# 
+# Response: mort
+#           Df  Sum Sq Mean Sq F value   Pr(>F)   
+# precip     1  8492.1  8492.1  9.7862 0.004566 **
+# edu        1  2229.7  2229.7  2.5695 0.122026   
+# nonwhite   1  4031.4  4031.4  4.6457 0.041376 * 
+# nitro      1  4632.4  4632.4  5.3384 0.029770 * 
+# sul        1   772.4   772.4  0.8901 0.354840   
+# Residuals 24 20826.4   867.8                    
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+            
+```
+
+It is proposed that our model actually have the corresponding coefficients: βprecipitation = 2, βeducation = −10, βnonwhite = 3, βnox = 0, and βso2 = 1. To find whether this is consistent with our model, we can assess by evaluating the F statistics for their full and reduced models: 
+
+Full model : Yi = Beta0 + Beta1(precip_i) + Beta2(Edu_i) + Beta3(Nonwhite_i) + Beta4(Nitro_i) + Beta5(Sul_i) + epsilon_i
+Reduced model : Yi - 2(precip_i) + 10(Edu_i) - 3(Nonwhite_i) - sul_i = Beta0 + epsilon_i
+
+This gives our hypothesis:
+H0 : βprecipitation = 2, βeducation = −10, βnonwhite = 3, βnox = 0, and βso2 = 1
+HA : Not all equalities in H0 holds 
+
+This can be assessed using the anova function again as we can compare the probability of the null happening by chance with the significance level as 0.05. 
+
+> pol_mod3 <- lm(mortality ~. -precipitation -education -nonwhite -nox -so2 -city, data=pollution)
+> anova(pol_mod3, pol_mod)
+Analysis of Variance Table
+Model 1: mortality ~ (city + precipitation + education + nonwhite + nox + 
+    so2) - precipitation - education - nonwhite - nox - so2 - 
+    city
+Model 2: mortality ~ precipitation + education + nonwhite + nox + so2
+  Res.Df   RSS Df Sum of Sq     F   Pr(>F)   
+1     29 40984                               
+2     24 20826  5     20158 4.646 0.004166 **
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+As seen, the comparison of both models gave the F statistic of 4.646 and the P-value as 0.00417. The small p-value meant slim chances of the model to occur under the null hypothesis. Thus we reject the null and conclude that at least one of the equalities proposed by the researcher is wrong.
+
+--------------------------------------------------------------------------------
+(f) [6 marks] One of the researcher is from the city of San Antonio, and has recorded a new
+set of measurements on each of the predictors. The precipitation is 33, education is
+11.5, nonwhite is 17.2 and nox and so2 are each 1. What do you predict the mortality
+rate to be? Find a 99% interval for this prediction.
+```{r}
+predict(pol_mod, data.frame(precipitation = 33, education = 11.5, nonwhite = 17.2, nox = 1, so2 = 1)
+        , interval = "prediction", level=0.99)
+#       fit      lwr      upr
+#  944.8783 851.7249 1038.032
+
+pol_mod$coefficients
+```
+A researcher found new measurements and they are: Precipitation = 33, Education is
+11.5, nonwhite = 17.2 and both Nitro and Sulfur are 1 each. By using the predict function, we can deduce the Mortality value with a 99% confidence level:
+
+> predict(pol_mod, data.frame(precipitation = 33, education = 11.5, nonwhite = 17.2, nox = 1, so2 = 1)
++         , interval = "prediction", level=0.99)
+       fit      lwr      upr
+1 944.8783 851.7249 1038.032
+
+The statistics shows that it estimates the mortality rate to be 944.8783 with the lower and upper intervals to be (851.7249, 1038.0320). 
+
+--------------------------------------------------------------------------------
+Questions 2 (60 marks)
+The data for this question comprises measurements on breeding pairs of land-bird species
+collected from 16 islands around Britain over the course of several decades available in a .csv
+file, bird. For each species, the data set contains an average time of extinctions, extinct, on
+those islands where the species appeared. (This is actually the reciprocal of the average of
+1/T where T is the length of time the species remained on the island and 1/T is taken to
+be zero if the species did not become extinct on the island);
+
+the average number of nesting pairs per year, over all islands where the species appeared (nest.pair); the size (size) of the species, (S = Small, L = Large); and the migratory status (mig.status) of the species, (R = Resident, M = Migrant). 
+
+It is expected that species with large numbers of nesting pairs will tend to remain longer before becoming extinct. Of particular interest is whether, after accounting for the number of nesting pairs, size or migratory status has any effect.
+
+(a) [10 marks] Fit a multiple linear regression (MLR) model with extinct as the response variable and all other covariates as predictors. Is the regression model significant? Interpret the coefficients for the categorical variables in this model. Does the coefficient support the expectations that large number of nesting pairs tend to delay extinction?
+```{r}
+bird <- read.csv("bird.csv", stringsAsFactors = T)
+attach(bird)
+bird
+
+extinct <- bird$extinct
+pair <- bird$nest.pair
+size <- bird$size
+mig <- bird$mig.status
+d_size <- ifelse(bird$size == "S", 1,0)
+d_mig <- ifelse(bird$mig.status == "R", 1, 0)
+
+bird_mod <- lm(extinct ~ pair + d_size + d_mig)
+summary(bird_mod)
+  #It is significant model
+
+bird_mod$coefficients
+# fitted / estimated model : Y_hat = 0.6078 + pair(1.8857) -4.8545(d_size) + 4.3128(d_mig)
+    # [S, M]The estimated mean time of extinction is shortened by 4.8545 years (?) for smaller birds, given that the birds were migratory and nesting pairs is constant
+  #[L, R] 
+anova(bird_mod)
+```
+
+The 'bird' linear model had the average extinction time ("Extinct") as the response variable, while the other covariates are the predictors, namely the average number of nesting pairs per year ("Pairs"), the size of the species ("Size") and their migratory status ("Mig status"). 
+
+Although R can inheritantly identify categorical variables and assign it binary values, the 2 categorical values, Size and Mig status was still given their dummy variables to control which value assigned to which level. In this case, the dummy variable for size has 1 for Small and 0 for Large. Similarly, Mig status has 1 for Resident and 0 for Migrant. 
+
+To identify whether this model is significant, we are identifying the overall F test; The significance of all the X variables onto the response variable. This F statistic along with the P-value can be found in the summary table:
+
+> bird_mod <- lm(extinct ~ pair + d_size + d_mig)
+> summary(bird_mod)
+Call:
+lm(formula = extinct ~ pair + d_size + d_mig)
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-15.680  -4.783  -2.255   1.031  49.472 
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)   
+(Intercept)   0.6078     3.0854   0.197  0.84452   
+pair          1.8857     0.5476   3.443  0.00107 **
+d_size       -4.8545     2.4811  -1.957  0.05521 . 
+d_mig         4.3128     2.7193   1.586  0.11818   
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Residual standard error: 9.711 on 58 degrees of freedom
+Multiple R-squared:  0.2692,	Adjusted R-squared:  0.2314 
+F-statistic:  7.12 on 3 and 58 DF,  p-value: 0.0003746
+
+Our hypothesis:
+H0 : Bk = 0
+HA : BK != 0 
+
+The summary shows the F statistic to be 7.12 for 3 and 58 degrees of freedom, thus a p-value of 0.0003746. Such a small p-value shows that the chance of the model to occur under the null hypothesis is slim, meaning that we reject the null and conclude that the regression model is significant. 
+
+With the above coefficients, we can derive our fitted / estimated regression function to be:
+Y_hat = 0.6078 + pair(1.8857) -4.8545(d_size) + 4.3128(d_mig)
+
+To interpret the categorical coefficients, we see that when "d_size" is 1, it represents the estimated extinction rate to be 4.8545 units smaller for small birds than larger birds, keeping all other variables constant. Similarly, the estimated extinction rate for residential birds is 4.3128 units higher than in migratory birds.
+
+It was expected that large number of nesting pairs tend to delay extinction. As seen in the fitted regression model, per unit increase in nesting pairs induced a 1.8857 unit increase in the mean of extinction rate. Thus, those birds on islands with larger number of nesting pairs tends to go extinct later than birds with smaller nesting pairs. 
+
+--------------------------------------------------------------------------------
+(b) [6 marks] As the question indicates, of particular interest is whether, after accounting
+for the number of nesting pairs, size or migratory status has any effect. Conduct a
+formal test of the hypothesis that βSize = βMigStatus = 0 using an appropriate anova
+table. Evaluate the Fstatistic and the corresponding p-value.
+```{r}
+#Partial F test
+#Null:βSize = βMigStatus = 0
+#Alt: Not all B in H0 is 0
+
+#Full mod: Yi = Beta0 + Beta1(pair_i) + Beta2(d_i1) + Beta3(d_i2) +epsilon_i
+#Reduced: Yi = Beta0 + Beta1(pair_i) + epsilon_i
+bird_mod2 <- lm(extinct~pair)
+anova(bird_mod)
+# Analysis of Variance Table
+# 
+# Model 1: extinct ~ pair
+# Model 2: extinct ~ pair + d_size + d_mig
+#   Res.Df    RSS Df Sum of Sq      F  Pr(>F)  
+# 1     60 6089.6                              
+# 2     58 5469.7  2    619.97 3.2871 0.04443 *
+
+  #Pval smaller than 0.05 = Reject H0 = one of them are significant 
+
+```
+
+When considering whether several of the predictors are significant or not, this allows for partial F test, where our hypothsis are:
+H0 : βSize = βMigStatus = 0
+HA : Not all β in null is 0
+
+Because we are assessing whether they are 0 or not, we need to establish our full and reduced models:
+Full model: Yi = Beta0 + Beta1(pair_i) + Beta2(d_i1) + Beta3(d_i2) + epsilon_i
+Reduced model: Yi = Beta0 + Beta1(pair_i) + epsilon_i
+
+Using the anova table with these models, we can obtain the F statistics and p-value to determine whether Betas in the null hypothesis are significant or not:
+
+> bird_mod2 <- lm(extinct~pair)
+> anova(bird_mod2, bird_mod)
+Analysis of Variance Table
+Model 1: extinct ~ pair
+Model 2: extinct ~ pair + d_size + d_mig
+  Res.Df    RSS Df Sum of Sq      F  Pr(>F)  
+1     60 6089.6                              
+2     58 5469.7  2    619.97 3.2871 0.04443 *
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+The anova function derived the F statistic as 3.2871 and the corresponding p-value to be 0.0444. Because the p-value shows that the chance of the model occuring under the null hypothesis is slim, we reject the null and assume that not all Betas in the null hypothesis is 0. This means that either βSize or βMigStatus is significant, not both. 
+
+-------------------------------------------------------------------------------
+(c) [6 marks] The Red-crested Periwinkle is a small, migratory species of bird, while the
+Great Plover is a large, resident species of bird. Assuming that the number of nesting
+pairs is the same for each species over the period, based on the model in part (a), what
+would you predict the difference in extinction times to be for these two species?
+```{r}
+#Assume constant B1
+#SM = 1,0
+  # Y = Beta0 + Beta1(Pair) + B2(Size)
+  # B2 = -4.8545
+#LR = 0,1
+  # Y = Beta0 + Beta1(Pair) + Beta3(mig)
+  #B3 = 4.3128
+
+# Y_hat = 0.6078 + pair(1.8857) -4.8545(d_size) + 4.3128(d_mig)
+
+#While their Y intercept would be the same at 0.6078, their slopes would be different. SM would have a slope of 4.8545, while LR would have a slope of 4.3128. 
+# The slope of the response function for LR is estimated to be 9.1673 greater than that of the SM group
+
+```
+
+We established the following fitted model:
+Y_hat = 0.6078 + pair(1.8857) - 4.8545(d_size) + 4.3128(d_mig)
+
+For small migratory birds, this makes the dummy variables levels for Size and Mig status to be 1 and 0 respectively. Using the fitted regression model, we can deduce:
+Y_hat = 0.6078 + pair(1.8857) - 4.8545(1) + 4.3128(0)
+      = 0.6078 + pair(1.8857) - 4.8545 
+      
+Similarly for large resident birds, the dummy levels for Size and Mig status are 0 and 1 respectively, forming the following formula:
+Y_hat = 0.6078 + pair(1.8857) - 4.8545(0) + 4.3128(1)
+      = 0.6078 + pair(1.8857) + 4.3128
+
+It should be noted that the Beta(pair) becomes the variable responsible for the slope of the model, whereas the other parameters are responsible for the intercept. Thus, the comparison of small migratory birds and large resident birds would induce a difference in the y-intercept for the extinction rate. There would be a total of 9.1673 (4.8545 + 4.3128) units difference in extinction rate between these species, where small migratory birds would go extinct faster than large migratory birds. 
+
+--------------------------------------------------------------------------------
+(d) [8 marks] A noted theory suggests that Size and Migratory Status should contribute
+equally to the extinction time. Test whether the coefficients of size and mig.status are
+the same. Construct an appropriate model to test this hypothesis.
+```{r}
+# full model : Yi = Beta0 + Beta1(pair_i) + Beta2(d_isize) + Beta3(d_imig) +epsilon_i
+  #df = n-4 = 58
+
+# reduced model : Yi = Beta0 + Beta1(pair_i) + Bc(d_isize + d_imig) +epsilon_i
+  # df = n-2 or n-3
+
+# H0: B(size) = B(Mig) -> contribute equally to extinction time
+
+bird_mod3 <- lm(extinct ~ pair + I(d_size + d_mig))
+anova(bird_mod3, bird_mod)
+
+# F* = [[SSE(R) - SSE(F)] / dfR - dfF] / SSE(F)/dfF
+# 
+# F* > F(1-a; dfR-dfF, dfF) --> Reject alt
+
+
+```
+
+We can test whether some of these predictor variables contribute equally towards the extinction rate. This would induce the following models and hypothesis:
+
+Full model : Yi = Beta0 + Beta1(pair_i) + Beta2(d_isize) + Beta3(d_imig) + epsilon_i
+Reduced model : Yi = Beta0 + Beta1(pair_i) + Bc(d_isize + d_imig) + epsilon_i
+
+H0 : B(size) = B(Mig) (i.e., they contribute equally to extinction time)
+HA : B(size) != B(Mig)
+
+Because it is assumed that both B(size) and B(Mig status) contribute equally to extinction time, we can replace them as Beta_c, where it represents both the Betas. This means that we need to make a new model where both "d_size" and "d_mig" are under the influence of the same Beta_c. We can then assess whether it is try with the anova table:
+
+> bird_mod3 <- lm(extinct ~ pair + I(d_size + d_mig))
+> anova(bird_mod3, bird_mod)
+Analysis of Variance Table
+Model 1: extinct ~ pair + I(d_size + d_mig)
+Model 2: extinct ~ pair + d_size + d_mig
+  Res.Df    RSS Df Sum of Sq      F  Pr(>F)  
+1     59 6076.2                              
+2     58 5469.7  1    606.49 6.4312 0.01393 *
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+The partial F statistic is seen to be 6.4312 with the p-value as 0.0139. A small p-value indicates rare chance of the regression happening under the null hypothesis. As such, we can assume that the contribution of both B(size) and B(Mig status) was not equal towards the extinction rate. 
+
+-------------------------------------------------------------------------------
+(e) [20 marks] Produce the appropriate diagnostic plots for the model fitted in part (a)
+and assess the model assumptions. Produce the relevant influence diagnostics for this
+model. Which data points appear to be influential in the analysis, and in what sense
+would you consider them influential? Also, do any points appear to be outliers? If so,
+to which species do these points correspond?
+```{r}
+# High leverage -> SUbstantial leverage in determining fitted value
+  #Larger leverage -> Smaller residual variance
+  # Threshold -> 2p/n
+plot(hatvalues(bird_mod), type='h')
+abline(h=2*4/length(extinct), lty=2)
+  # With the threshold, shows 2 potential datapoints that are high leverage
+id = order(hatvalues(bird_mod), decreasing=T)[1:2]
+bird$name[id]
+  # Birds: Starling and Lapwing
+
+# Outliers
+plot(rstudent(bird_mod))
+out <- which(rstudent(bird_mod) > 3)
+bird[28,]
+max(abs(rstudent(bird_mod))) #= 7.111209
+qt(1-0.05/(62*2), df = 62-4-1) # = 3.539304
+  # test statistic is larger than critical value = reject null = there are outliers
+
+# influential points
+plot(cooks.distance(bird_mod), type="h", main="Cooks distance plot")
+plot(dffits(bird_mod), type="h")
+abline(h=0)
+abline(h=c(-1,1), col=2)
+iid = order(cooks.distance(bird_mod), decreasing=T)[1:2]
+bird$name[iid] # = Starling and Raven
+sort(cooks.distance(bird_mod), decreasing=T)[1:2]
+  #        60        28 
+  # 0.4269443 0.3449742 
+pf(0.4269443, 4, 62-4) # == 0.2114308
+pf(0.3449742, 4, 62-4) # == 0.1535496
+
+--------------------------------------------------------------------------------
+par(mfrow = c(2,2))
+plot(bird_mod, which = 2)
+plot(bird_mod)
+  # Residuals + Fitted (independence + constant var), QQ plot (normality), High leverage (leverage)
+plot(hatvalues(bird_mod), type='h', main="Leverage plot")
+abline(h=2*4/length(extinct), lty=2)
+par(mfrow = c(1,1))
+plot(fitted(bird_mod), rstudent(bird_mod))
+
+2 plots model assumptions, 2 plots unusual observations
+  residuals and fitted -> Constant var + independence
+plot(bird_mod)
+  qq plot
+qqnorm(bird_mod$residuals)
+qqline(bird_mod$residuals)
+  cooks distance
+  high leverage (3 marks)
+  [linearity]
+
+```
+
+(f) [10 marks] Two transformations are suggested for the response variable, log(extinct)
+and 1/extinct. Investigate whether using these transformations improves on the
+model fit. Comment on the assumptions of MLR for these models as compared to
+your original model. Which of three models would you choose based on your analysis?
+```{r}
+bird
+
+par(mfrow=c(1,2))
+boxplot(log(extinct) ~ size + mig.status, data = bird)
+boxplot(1/(extinct) ~ size + mig.status, data = bird)
+
+pairs(bird[,2:5], log=1, main="Log(extinct)")
+
+bird["time"] = ""
+bird$time = 1/extinct
+bird
+
+pairs(bird[,3:6], main="1/extinct")
+
+summary(lm(log(extinct) ~ nest.pair + size + mig.status, data=bird))
+  # Multiple R-squared:  0.554,	Adjusted R-squared:  0.531 
+summary(lm(1/extinct ~ nest.pair + size + mig.status, data=bird))
+  # Multiple R-squared:  0.5905,	Adjusted R-squared:  0.5693 
+par(mfrow=c(2,2))
+plot(lm(log(extinct) ~ nest.pair + size + mig.status, data=bird))
+par(mfrow=c(2,2))
+plot(lm(1/extinct ~ nest.pair + size + mig.status, data=bird))
+
+```
+(This is actually the reciprocal of the average of
+1/T where T is the length of time the species remained on the island and 1/T is taken to
+be zero if the species did not become extinct on the island)
+
+It is expected that species with large numbers of nesting pairs will tend to remain longer before becoming extinct. Of particular interest is whether, after accounting for the number of nesting pairs, size or migratory status has any effect.
+
+
+
+
+

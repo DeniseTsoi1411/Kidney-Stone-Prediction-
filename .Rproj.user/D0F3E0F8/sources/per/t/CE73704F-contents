@@ -1,0 +1,132 @@
+---
+title: "kidney_stone_analysis"
+output: html_document
+date: "2023-08-09"
+---
+## Relevant links:
+https://www.kaggle.com/datasets/vuppalaadithyasairam/kidney-stone-prediction-based-on-urine-analysis
+https://link.springer.com/chapter/10.1007/978-1-4612-5098-2_45
+https://www.geeksforgeeks.org/ml-gradient-boosting/ 
+https://www.econometrics-with-r.org/11.1-binary-dependent-variables-and-the-linear-probability-model.html 
+
+
+## Information about the dataset
+This dataset predicts the presence of a kidney stone depending on the urine analysis. Ultimately, the analysis is focused on comparing certain physical characteristics of urine and the formation of calcium oxalate crystals.
+
+
+### The characteristics are as follows:
+1) gravity = Specific gravity; measures the density of urine to water
+2) ph = The acidic / basic quality of the urine
+3) osmo (mOsm) = Osmolarity; to measure the concentration of molecules in the solution
+4) cond (mMho milliMho) = Conductivity; The concentration of charged ions in solution
+5) urea (millimoles / l) = Urea concentration
+6) calc = Concentration in millimoleslitre 
+7) target = Presence (1) or Absence (0) of the stone
+
+
+### Understanding how the characteristics collaborate with kidney stones:
+Specific Gravity: Shows concentration of dissolved substances in urine compared to pure water. It compares the dilution of the urine, and therefore the information about kidney function and potential stone formation.
+
+pH: Measures whether there is presence of other substances that can affect the solubility of certain compounds.
+
+Osmolarity: If the concentration of certain substances exceed the solubility limits in urine, it can compound and form crystals (EG calcium, oxalate, and uric acid). Solubility limits depends on the pH levels.
+  - High uric acid content in body -> It clumps together in kidney to form kidney stones
+  - Some forms of uric acid -> Urate anion
+
+Conductivity: Many substances that contribute to kidney stones can conduct electricity (EG calcium, oxalate, phosphate, and urate). This characteristic can help diagnose and monitor presence of kidney stones.
+
+Urea Concentration: Urea is a solute and is waste byproduct from the liver that gets excreted in urine. High urea concentration impacts the solubility of other substances, therefore may lead to stone formation.
+
+Calcium Concentrate: Calcium is responsible for several types of kidney stones. It helps evaluate risks of calcium-based stone formations 
+
+
+### My prediction
+Presence of kidney stones would be seem with:
+- Elevated specific gravity (>1.00), osmolarity, conductivity, urea concentration and calcium concentration
+- Acidic pH (Under 7)
+
+There is a statistical significant relationship between the presence of kidney stones with an increase in specific gravity, osmolarity, conductivity, urea concentration and calcium concentration, along with a low pH.
+
+
+## Code
+### Opening and reading the data
+```{r setup, include=FALSE, opening the data}
+library(ggplot2)
+library(tidyverse)
+library(patchwork)
+
+kidney <- read.csv("kindey stone urine analysis.csv", stringsAsFactors = T)
+head(kidney)
+str(kidney[,5])
+  # Helps to see the attributes of each characteristics (nums and ints only)
+```
+Looking at the state of the data, data wrangling is not necessary since everything is usable and ready for further analysis.
+
+
+### Plotting data for Exploratory Data Analysis
+```{r plots}
+plot(kidney)
+  # A plot to quickly find the relationship of variables and their characteristics
+summary(kidney)
+
+ggplot(data=kidney, aes(y=kidney[,1], group=target)) + geom_boxplot()
+ggplot(data=kidney, aes(y=kidney[,2], group=target)) + geom_boxplot()
+ggplot(data=kidney, aes(y=kidney[,3], group=target)) + geom_boxplot()
+ggplot(data=kidney, aes(y=kidney[,4], group=target)) + geom_boxplot()
+ggplot(data=kidney, aes(y=kidney[,5], group=target)) + geom_boxplot()
+ggplot(data=kidney, aes(y=kidney[,6], group=target)) + geom_boxplot()
+
+cor.test(kidney)
+```
+From 'plot(kidney)', we can infer multiple things about the dataset. Gravity may have a small negative correlation with pH, yet seems to have medium to high levels of positive correlation for osmo, cond, and urea. This means that the relationship of Gravity and pH cannot be due to levels in urea, since urea is acidic, therefore should inc...
+
+[Finish this off, talk about the boxplots]
+
+
+### Exploring different model options
+
+The dependent variable is 'target' while the others are the independent variable. The challenge with this dataset comes with 'target' being a binary, discrete variable, meaning that normal linear modelling would not work.
+
+In this case, I explored different mathematical models to see which model best suits this scenario, such as: Linear Probability Model (LPM), Boosting algorithms (Gradient boosting and AdaBoost), Generalised Linear Model (Probit and Logit model), Maximum likelihood estimation of nonlinear regression models. 
+
+LPM: A type of linear regression model using a binary dependent Y. Its interpretation is based on how any changes in X affects the probability of Y being 0 or 1. However, if the changes in X is large enough, the prediction of Y will be larger than 1 or smaller than 0. In our dataset, we have a lot of X variables, meaning that our range will be high, and would give impossible and meaningless readings of Y. The slope will also have a significant margin of error due to its constant nature. Theoretically, the slope should be an S shape for binary Y. 
+
+Boosting algorithms: A boosting algorithm in machine learning used for classification and regression tasks. It trains the model sequentially to correct and better the previous model. The two types of popular boosting algorithms: AdaBoost and Gradient Boosting.
+
+In gradient boosting, it trains the new model such that it minimises the loss function (such as mean square error or cross-entropy) using gradient descent. Models created would be added into an ensemble, in which the newest model assesses the gradient of loss function towards the ensemble, then gets added into the ensemble. This would continue until the stopping criterion is met.
+  - What is loss function: 
+  - What is cross entropy
+  - What is gradient descent
+  
+In AdaBoost, models are trained against residual errors of previous models (labels) using the technique Gradient Boosted Trees whose learner is CART (Classification and Regression Trees). With M trees, each tree is trained using the feature matrix X with the residual error of the previous tree (ri-1). Thus: (X, ri). The predicted results ri-1(hat) is used to determine the residuals of the current tree (ri). This is repeated until M trees are trained. 
+
+AdaBoost requires some parameters: Shrinkage and eta. Shrinkage refers to how the prediction of each tree in the ensemble is shrunk after being multiplied by the learning rate (eta), which ranges from 0 to 1. Thus, there is a trade-off between eta and the number of estimators such that it reaches certain model performance. Each tree predicts a label, and the final prediction is: 
+    y(pred) = y1 + (eta * r1) + (eta * r2) + ... + (eta * rN)
+    
+![Explanation on how AdaBoost works](adaboost_information.png)
+
+Generalised Linear Model: While using the same function as one found in OLS (aka index function), we pass the index through a certain function (F(), aka link function). This allows us to accouont for any nonlinear dependent variables. Two common types of link functions are: Probit and Logistic links.
+
+Probit regression: Probit(index) = Φ(index) 
+  Φ() = Standard normal cumulative distribution function
+The probability that a random standard normal value is less than or equal to index. The Probit coefficient (\beta1) is the change in quantile z associated with one unit change in X.
+
+Logistic regression: Logistic(index) = (e^{index}) / 1 + e^{index}
+
+
+In conclusion
+
+
+Note: Ordinary Least Squares (OLS) is a form of Linear Regression, where the least squares predicts the minimum square error (SSE), therefore fits the data within minimal square errors. Maximum likelihood and Generalised methods are alternative approaches to OLS. [Cannot be used]
+
+### Model with Probit regression 
+```{r}
+probit_model <- glm(target ~ 
+                       gravity + ph + osmo + cond + urea + calc, 
+                     family = binomial(link = "probit"),
+                     data = kidney)
+summary(probit_model) # Helps build the equation using the "Estimate"
+```
+
+```{r}
+```
